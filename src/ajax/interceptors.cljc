@@ -114,7 +114,6 @@
           -1 (if (-was-aborted xhrio)
                (fail "Request aborted by client." :aborted)
                (fail "Request timed out." :timeout))
-          204 [true nil]       ; 204 and 205 should have empty responses
           205 [true nil]
           (try
             (let [response (read xhrio)]

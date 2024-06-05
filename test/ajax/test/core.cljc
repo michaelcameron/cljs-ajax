@@ -257,19 +257,49 @@
             :api simple-reply}
        :response-format [:json ["text/plain" :raw]]))
 
+(defn json-response-format-with-status-and-headers
+  "Convert xhrio into a map with status, headers, and body, e.g
+   {:status  200
+    :headers {\"Expires\" \"Thu, 01 Jan 1970 00:00:01 GMT\"
+              \"Content-Type\" \"application/json;charset=UTF-8\"
+              ...}
+    :body    {:some {:json {:structure}}}}
+
+    The body will be the response of parsing the json and turning the keys into
+    keywords. If the actual HTTP body is the empty string then the body will be nil
+    in the map.
+  "
+  []
+  {:description  "JSON response format with status and headers"
+   :content-type ["application/json"]
+   :read         (fn [xhrio]
+                   {:status (ajax.protocols/-status xhrio)
+                    :headers (-> xhrio
+                                 ajax.protocols/-get-all-headers)
+                    :body (->> xhrio
+                               ajax.protocols/-body
+                               #?(:clj (json/read-json-cheshire nil false)
+                                  :cljs (json/read-json-native nil false)))})})
+
 (deftest no-content
   (let [r1 (atom "whatever")
         r2 (atom "whatever")]
     (POST "/" {:handler #(reset! r1 %)
                :error-handler #(reset! r1 %)
-               :response-format (json-response-format)
+               :response-format (json-response-format-with-status-and-headers)
                :api (FakeXhrIo. "application/json; charset blah blah" "" 204)})
-    (is (= nil @r1))
+    (is (= {:body nil
+            :headers {"Content-Type" "application/json; charset blah blah"}
+            :status 204}
+           @r1))
     (POST "/" {:handler #(reset! r2 %)
                :error-handler #(reset! r2 %)
-               :response-format (json-response-format)
+               :response-format (json-response-format-with-status-and-headers)
                :api (FakeXhrIo. "application/json; charset blah blah" "{\"a\":\"b\"}" 200)})
-    (is (= {"a" "b"} @r2))))
+    (is (= {:body {"a" "b"}
+            :headers {"Content-Type" "application/json; charset blah blah"}
+            :status 200}
+           @r2))))
 
 (deftest not-modified
   "If the response to a GET request is of status 304 Not Modified it should be successful"

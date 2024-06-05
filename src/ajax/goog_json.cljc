@@ -7,10 +7,12 @@
             (.serialize (goog.json.Serializer.) (clj->js data))))
 
 #? (:cljs (defn read-json-google [raw keywords? text]
-            (let [json (goog-json/parse text)]
-              (if raw
-                  json
-                  (js->clj json :keywordize-keys keywords?)))))
+            (if (empty? text)
+                nil
+                (let [json (goog-json/parse text)]
+                  (if raw
+                    json
+                    (js->clj json :keywordize-keys keywords?))))))
 
 (def goog-json-response-format
   "Returns a JSON response format using the native JSON 

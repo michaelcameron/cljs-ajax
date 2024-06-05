@@ -27,10 +27,12 @@
            (c/parse-stream (io/reader text) keywords?)))
 
 #? (:cljs (defn read-json-native [raw keywords? text]
-               (let [result-raw (.parse js/JSON text)]
-                    (if raw
-                        result-raw
-                        (js->clj result-raw :keywordize-keys keywords?)))))
+            (if (empty? text)
+              nil
+              (let [result-raw (.parse js/JSON text)]
+                (if raw
+                  result-raw
+                  (js->clj result-raw :keywordize-keys keywords?))))))
 
 ; From Kjetil Thuen's "safe" converter
 #? (:cljs (defn read-json-transit [raw keywords? text]
